@@ -1,0 +1,5 @@
+for(int i=0) {
+    if(int i = 0) {
+        print something
+    }
+}

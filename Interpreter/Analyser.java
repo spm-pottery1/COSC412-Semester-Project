@@ -1,6 +1,15 @@
 import java.util.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+/*
+ * TO-DO:
+ *  - Refactor code:
+ *  - must check -> create token -> increment
+ *  - kms
+ */
+
+
+
 public class Analyser {
      public static void main(String[] args) {
          Scanner scanner = new Scanner(System.in);

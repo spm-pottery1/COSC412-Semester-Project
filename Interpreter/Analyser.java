@@ -1,6 +1,7 @@
-import java.util.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.*;
 public class Analyser {
      public static void main(String[] args) {
          Scanner scanner = new Scanner(System.in);
@@ -8,7 +9,9 @@ public class Analyser {
          HashSet<String> symbolSet = new HashSet<>();
          HashSet<Character> charSet = new HashSet<>();
          initLists(keywordSet,symbolSet,charSet);
-         File inputFile = new File("C:\\Users\\spm51\\OneDrive\\Desktop\\Projects\\Interpreter\\input.txt");
+         System.out.println("Enter Location of File (Example C:\\User\\spm512\\)");
+         
+         File inputFile = getFile(scanner);
          
          HashMap<Integer, String> fileContent = nextFromFile(inputFile);
          
@@ -103,145 +106,8 @@ public class Analyser {
                 }
                 j++;
             } else {
-                
-                
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                
                 String oneCharSymbol = String.valueOf(c);
-
+                String twoCharSymbol = (j + 1 < line.length()) ? line.substring(j, j + 2) : null; 
                 if (twoCharSymbol != null && symbolSet.contains(twoCharSymbol)) {
                     if (tokenValue.length() > 0) {
                         tokenStrings.add(tokenValue.toString());
@@ -429,5 +295,15 @@ public class Analyser {
          }
 
      }
+    
+     public static String getFilePathname(Scanner scanner) {
+        File inputFile = getFile(scanner);
+        try {
+            return inputFile.getCanonicalPath();
+        } catch (IOException e) {
+            System.out.println("Failed To Find File");
+            return null;
+        }
+    }
 
 }

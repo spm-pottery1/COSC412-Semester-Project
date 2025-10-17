@@ -29,9 +29,9 @@ public class MyToken {
 	@Override
 	public String toString() {
 		if (lexeme == null) {
-			return "Lexeme: [NULL], Value: " + String.valueOf(value);
+			return "[NULL], Value: " + String.valueOf(value);
 		}
-		return "Lexeme: [" + lexeme.toString() + "], Value: " + String.valueOf(value);
+		return "[" + lexeme.toString() + "], Value: " + String.valueOf(value);
 	}
 
 	public void setValue(Object v) {

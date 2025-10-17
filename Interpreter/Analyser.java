@@ -1,15 +1,6 @@
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
-/*
- * TO-DO:
- *  - Refactor code:
- *  - must check -> create token -> increment
- *  - kms
- */
-
-
 
 public class Analyser {
      public static void main(String[] args) {
@@ -32,6 +23,9 @@ public class Analyser {
      }
     
         private static void createAndPrintTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
+            /*creates my tokens and stores them in a List before printing them. 
+            * This uses a cheked token value for kind (ctoken) and a string for value (token)
+            */
             List<MyToken> tokenSet = new ArrayList<>(tokenStrings.size());         
              int i = 0; 
             while (!tokenStrings.isEmpty()) { 
@@ -46,12 +40,12 @@ public class Analyser {
                 i++; 
          }
          
-         if (positions.length > 0) {
-             tokenSet.add(new MyToken(new MyLexeme("END-OF-TEXT", new Tuple(positions[positions.length - 1].getX(), positions[positions.length - 1].getY() + 1)), "$"));
-         } 
+        
+             tokenSet.add(new MyToken(new MyLexeme("END-OF-FILE", new Tuple(positions[positions.length - 1].getX(), positions[positions.length - 1].getY() + 1)), "$"));
          
          print(tokenSet);
      }
+
 
      private static Tuple[] getTokenPositions(HashMap<Integer, String> fileContent, List<String> tokenStrings) {
          Tuple[] positions = new Tuple[tokenStrings.size()];
@@ -215,7 +209,7 @@ public class Analyser {
          hashSet.add("not");
          hashSet.add("int");
 
-         System.out.println("DEBUG: KEYOWORD SET CREATED");
+         //System.out.println("DEBUG: KEYOWORD SET CREATED");
      }
      public static void initSymbolSet(HashSet<String> hashSet) {
          hashSet.add("+");
@@ -240,7 +234,7 @@ public class Analyser {
          hashSet.add("}");
 
 
-         System.out.println("DEBUG: SYMBOL SET CREATED");
+         //System.out.println("DEBUG: SYMBOL SET CREATED");
      }
      public static boolean checkInt(String tokenValue) {
          if(tokenValue == null || tokenValue.isEmpty()){
@@ -274,7 +268,7 @@ public class Analyser {
              return false;
          }
          if(symbolSet.contains(tokenValue)) {
-             System.out.println("Symbol Checked");
+            // System.out.println("Symbol Checked");
              return true;
 
          } else {
@@ -284,7 +278,7 @@ public class Analyser {
      }
 
      public static boolean checkEndOfText(String tokenValue) {
-         if(tokenValue == null || tokenValue.isEmpty()) {
+         if(tokenValue == "$") {
              return true;
          } else {
              return false;

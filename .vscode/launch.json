@@ -8,21 +8,24 @@
             "type": "java",
             "name": "Current File",
             "request": "launch",
-            "mainClass": "${file}"
+            "mainClass": "${file}",
+            "console": "integratedTerminal"
         },
         {
             "type": "java",
             "name": "Analyser",
             "request": "launch",
             "mainClass": "Analyser",
-            "projectName": "COSC412-Semester-Project_1abaf024"
+            "projectName": "COSC412-Semester-Project_1abaf024",
+            "console": "integratedTerminal"
         },
         {
             "type": "java",
             "name": "Interpreter",
             "request": "launch",
             "mainClass": "Interpreter",
-            "projectName": "COSC412-Semester-Project_1abaf024"
+            "projectName": "COSC412-Semester-Project_1abaf024",
+            "console": "integratedTerminal"
         }
     ]
 }

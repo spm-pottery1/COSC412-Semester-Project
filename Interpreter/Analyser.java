@@ -31,20 +31,25 @@ public class Analyser {
          createAndPrintTokens(tokenStrings, cTokenStrings, positions, keywordSet, symbolSet);
      }
     
-     private static void createAndPrintTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
-         List<MyToken> tokenSet = new ArrayList<>(tokenStrings.size());
-         
-         for (int i = 0; i < tokenStrings.size(); i++) {
-             String token = tokenStrings.get(i);
-             String cToken = cTokenStrings.get(i);
-             if (i >= positions.length) {
-                 //System.out.println("Error: Mismatch between token count and position count.");
-                 break; 
-             }
-             Tuple position = positions[i];
-             tokenSet.add(new MyToken(new MyLexeme(cToken, position), token));
+        private static void createAndPrintTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
+            List<MyToken> tokenSet = new ArrayList<>(tokenStrings.size());         
+             int i = 0; 
+            while (!tokenStrings.isEmpty()) { 
+                 String token = tokenStrings.remove(0); 
+                 String cToken = cTokenStrings.remove(0); 
+             
+                if (i >= positions.length) {
+                     break; 
+                }
+                Tuple position = positions[i];
+                tokenSet.add(new MyToken(new MyLexeme(cToken, position), token));
+                i++; 
          }
-         tokenSet.add(new MyToken(new MyLexeme("END-OF-TEXT", new Tuple(positions[positions.length - 1].getX(), positions[positions.length - 1].getY() + 1)), null));
+         
+         if (positions.length > 0) {
+             tokenSet.add(new MyToken(new MyLexeme("END-OF-TEXT", new Tuple(positions[positions.length - 1].getX(), positions[positions.length - 1].getY() + 1)), "$"));
+         } 
+         
          print(tokenSet);
      }
 
@@ -225,6 +230,7 @@ public class Analyser {
          hashSet.add("!");
          hashSet.add("=");
          hashSet.add("!=");
+         hashSet.add(":=");
          hashSet.add("++");
          hashSet.add("--");
          hashSet.add("'");

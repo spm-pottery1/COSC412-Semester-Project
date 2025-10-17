@@ -1,7 +1,7 @@
 
-import java.util.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.*;
 /*
  * TO-DO:
  *  - Refactor code:
@@ -18,7 +18,7 @@ public class Analyser {
          HashSet<String> symbolSet = new HashSet<>();
          HashSet<Character> charSet = new HashSet<>();
          initLists(keywordSet,symbolSet,charSet);
-         File inputFile = new File("C:\\Users\\spm51\\OneDrive\\Desktop\\Projects\\Interpreter\\input.txt");
+         File inputFile = new File(fileLoc(scanner));
          
          HashMap<Integer, String> fileContent = nextFromFile(inputFile);
          
@@ -31,20 +31,25 @@ public class Analyser {
          createAndPrintTokens(tokenStrings, cTokenStrings, positions, keywordSet, symbolSet);
      }
     
-     private static void createAndPrintTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
-         List<MyToken> tokenSet = new ArrayList<>(tokenStrings.size());
-         
-         for (int i = 0; i < tokenStrings.size(); i++) {
-             String token = tokenStrings.get(i);
-             String cToken = cTokenStrings.get(i);
-             if (i >= positions.length) {
-                 System.out.println("Error: Mismatch between token count and position count.");
-                 break; 
-             }
-             Tuple position = positions[i];
-             tokenSet.add(new MyToken(new MyLexeme(cToken, position), token));
+        private static void createAndPrintTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
+            List<MyToken> tokenSet = new ArrayList<>(tokenStrings.size());         
+             int i = 0; 
+            while (!tokenStrings.isEmpty()) { 
+                 String token = tokenStrings.remove(0); 
+                 String cToken = cTokenStrings.remove(0); 
+             
+                if (i >= positions.length) {
+                     break; 
+                }
+                Tuple position = positions[i];
+                tokenSet.add(new MyToken(new MyLexeme(cToken, position), token));
+                i++; 
          }
-         tokenSet.add(new MyToken(new MyLexeme("END-OF-TEXT", new Tuple(positions[positions.length - 1].getX(), positions[positions.length - 1].getY() + 1)), null));
+         
+         if (positions.length > 0) {
+             tokenSet.add(new MyToken(new MyLexeme("END-OF-TEXT", new Tuple(positions[positions.length - 1].getX(), positions[positions.length - 1].getY() + 1)), "$"));
+         } 
+         
          print(tokenSet);
      }
 
@@ -112,9 +117,9 @@ public class Analyser {
                     tokenValue.setLength(0);
                 }
                 j++;
-            } else {                
+            } else {   
+                String twoCharSymbol = (j + 1 < line.length()) ? line.substring(j, j + 2) : null;             
                 String oneCharSymbol = String.valueOf(c);
-
                 if (twoCharSymbol != null && symbolSet.contains(twoCharSymbol)) {
                     if (tokenValue.length() > 0) {
                         tokenStrings.add(tokenValue.toString());
@@ -225,6 +230,7 @@ public class Analyser {
          hashSet.add("!");
          hashSet.add("=");
          hashSet.add("!=");
+         hashSet.add(":=");
          hashSet.add("++");
          hashSet.add("--");
          hashSet.add("'");
@@ -302,5 +308,13 @@ public class Analyser {
          }
 
      }
+
+     public static String fileLoc(Scanner scanner) {
+        //Get user input and store it into file loc
+        System.out.print("Enter the file location: ");
+        String fileLoc = scanner.nextLine();
+        return fileLoc;
+     }
+
 
 }

@@ -23,34 +23,26 @@ This project requires the main class file ("Analyser.java") as well as the other
 **COMPILE**
  1. Use the Java compiler (javac) to compile the file
 
---------------------------------------------------
-Command Prompt |
---------------------------------------------------
-cd C:\Users\Your-File-Location
+cd C:\Users\Your-Username\Location
 javac Analyser.java
---------------------------------------------------
+
 
 **Execute**
 2. Run the compiled Analyser.java class using the JVM (java)
 
----------------------------------------------------
-Command Prompt |
----------------------------------------------------
 java Analyser
----------------------------------------------------
 
 **Provide Input**
 3. The program will prompt you for the input file's file path
 
----------------------------------------------------
-Command Prompt |
----------------------------------------------------
+
 Enter the file location: *Input the full path to source file*
----------------------------------------------------
+
+**What is this?**
 
 This program serves as a lexical analyser for our 455 programing languages class language. It recognizes keywords, predefinied symbols, identifiers, and numerics as well as an "End-of-File" token
 
-## --ACCEPTED TOKENS-- ##
+**Accepted Tokens**
 | Token Type | Value Example | Description |
 --------------------------------------------
 | *Keyword* | 'for', 'while', 'true', 'false' | Recognized Keywords |

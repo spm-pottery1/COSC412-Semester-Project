@@ -44,13 +44,12 @@ This program serves as a lexical analyser for our 455 programing languages class
 
 **Accepted Tokens**
 | Token Type | Value Example | Description |
---------------------------------------------
-| *Keyword* | 'for', 'while', 'true', 'false' | Recognized Keywords |
-| *Symbol* | '=', '+', ':=', '!=', '>=' | Symbols that are 1 or 2 chars long |
-| *ID* | 'i' 'pogo' '_cornball' | Variables starting with a letter or underscore |
-| *NUM* | '43' '3' '42235' | Any sequence of digits |
-| *End-of-Text*| '$' | Token added at the end to mark end of file |
----------------------------------------------
+| Keyword | 'for', 'while', 'true', 'false' | Recognized Keywords |
+| Symbol | '=', '+', ':=', '!=', '>=' | Symbols that are 1 or 2 chars long |
+| ID | 'i' 'pogo' '_cornball' | Variables starting with a letter or underscore |
+| NUM | '43' '3' '42235' | Any sequence of digits |
+| End-of-Text| '$' | Token added at the end to mark end of file |
+
 
 **ERROR HANDLING**
 File-Not-Found: The program will exit with the message "Error: File not Found"

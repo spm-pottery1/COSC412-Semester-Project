@@ -43,7 +43,7 @@ Enter the file location: *Input the full path to source file*
 This program serves as a lexical analyser for our 455 programing languages class language. It recognizes keywords, predefinied symbols, identifiers, and numerics as well as an "End-of-File" token
 
 **Accepted Tokens**
-| Token Type | Value Example | Description |
+| Token Type | Value Example | Description | \n
 | Keyword | 'for', 'while', 'true', 'false' | Recognized Keywords |
 | Symbol | '=', '+', ':=', '!=', '>=' | Symbols that are 1 or 2 chars long |
 | ID | 'i' 'pogo' '_cornball' | Variables starting with a letter or underscore |

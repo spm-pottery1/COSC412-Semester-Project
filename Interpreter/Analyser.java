@@ -21,10 +21,19 @@ public class Analyser {
          
          Tuple[] positions = getTokenPositions(fileContent, tokenStrings);
          
-         createAndPrintTokens(tokenStrings, cTokenStrings, positions, keywordSet, symbolSet);
+         List<MyToken> tokens = createTokens(tokenStrings, cTokenStrings, positions, keywordSet, symbolSet);
+            parse(tokens);
      }
+
+        public static void parse(List<MyToken> tokens) {
+        
+            for(MyToken token: tokens) {
+                System.out.println(token);
+            }
+        
+        }
     
-        private static void createAndPrintTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
+        public static List<MyToken> createTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
             /*creates my tokens and stores them in a List before printing them. 
             * This uses a cheked token value for kind (ctoken) and a string for value (token)
             */
@@ -45,7 +54,7 @@ public class Analyser {
         
              tokenSet.add(new MyToken(new MyLexeme("END-OF-FILE", new Tuple(positions[positions.length - 1].getX(), positions[positions.length - 1].getY() + 1)), "$"));
          
-         print(tokenSet);
+         return(tokenSet);
      }
 
 
@@ -120,6 +129,9 @@ public class Analyser {
                     if (tokenValue.length() > 0) {
                         tokenStrings.add(tokenValue.toString());
                         tokenValue.setLength(0);
+                    }
+                    if (twoCharSymbol.equals("//")) {
+                        break;
                     }
                     tokenStrings.add(twoCharSymbol);
                     j += 2;

@@ -7,6 +7,7 @@ import java.util.*;
 public class Analyser {
      public static void main(String[] args) {
          Scanner scanner = new Scanner(System.in);
+         int currentIndex = 0;
          HashSet<String> keywordSet = new HashSet<>();
          HashSet<String> symbolSet = new HashSet<>();
          HashSet<Character> charSet = new HashSet<>();
@@ -22,16 +23,85 @@ public class Analyser {
          Tuple[] positions = getTokenPositions(fileContent, tokenStrings);
          
          List<MyToken> tokens = createTokens(tokenStrings, cTokenStrings, positions, keywordSet, symbolSet);
-            parse(tokens);
+         //print(tokens);   
+         parse(tokens, currentIndex);
      }
 
-        public static void parse(List<MyToken> tokens) {
-        
-            for(MyToken token: tokens) {
-                System.out.println(token);
-            }
-        
+        public static void parse(List<MyToken> tokens, int currentIndex) {
+            // Parse the program through: program name: 
+            currentIndex = programHeaderParse(tokens, currentIndex);
+            System.out.println(tokens.get(currentIndex));
+            System.out.println("Entering Body Parse");
+            bodyParse(tokens, currentIndex);
         }
+
+        public static void bodyParse(List<MyToken> tokens, int currentIndex) {
+            MyToken currentToken = getNextToken(tokens, currentIndex);
+            System.out.println("Current Token in Body Parse: " + currentToken);
+            boolean isInt = matchToken(currentToken, "int");
+            boolean isBool = matchToken(currentToken, "bool");
+            if(isInt || isBool) {
+                
+                declarationsParse(tokens, currentIndex, isBool, isInt);
+
+            }
+            else {
+                statementParse(tokens, currentIndex);
+            }
+
+        }
+
+        public static void declarationsParse(List<MyToken> tokens, int currentIndex, boolean isBool, boolean isInt) {
+            MyToken currentToken = getNextToken(tokens, currentIndex);
+            if(isBool || isInt) {
+                System.out.println("Bool or Int Declaration Found");
+            }
+            
+        }
+
+        public static void statementParse(List<MyToken> tokens, int currentIndex) {
+            MyToken currentToken = getNextToken(tokens, currentIndex);
+            
+        }
+
+        public static int programHeaderParse(List<MyToken> tokens, int currentIndex) {
+            MyToken currentToken = getNextToken(tokens, currentIndex);
+            //System.out.println(currentToken); //Debug print of current token to double check functionality
+            matchToken(currentToken, "program");
+            currentIndex++;
+            
+            currentToken = getNextToken(tokens, currentIndex);
+            //System.out.println(currentToken); //Debug print of current token to double check functionality
+            matchToken(currentToken, "ID");
+            currentIndex++;
+            
+            currentToken = getNextToken(tokens, currentIndex);
+            //System.out.println(currentToken); //Debug print of current token to double check functionality
+            matchToken(currentToken,":");
+            currentIndex++;
+
+            return currentIndex;
+        }
+
+
+        public static boolean matchToken(MyToken currentToken, String expectedKind) {
+            if(currentToken.getLexeme().getKind().equals(expectedKind)) {
+                System.out.println("Matched " + expectedKind + " at " + currentToken.getLexeme().get_sPos());
+                return true;
+            } else {
+                System.out.println("Error: Expected " + expectedKind + " at " + currentToken.getLexeme().get_sPos());
+                return false;
+            }
+        }
+
+        public static MyToken getNextToken(List<MyToken> tokens, int currentIndex) {
+            if (currentIndex < tokens.size()) {
+                return tokens.get(currentIndex);
+            } else {
+                return null; // No more tokens
+            }
+        }
+
     
         public static List<MyToken> createTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
             /*creates my tokens and stores them in a List before printing them. 
@@ -68,7 +138,13 @@ public class Analyser {
              }
              int j = 0;
              while (j < line.length() && tokenIndex < tokenStrings.size()) {
-                 char c = line.charAt(j);
+                 
+                if (j + 1 < line.length() && line.substring(j, j + 2).equals("//")) {
+                // If comment is found, skip the rest of the line
+                break; 
+                }
+                
+                char c = line.charAt(j);
                  if (Character.isWhitespace(c)) {
                      j++;
                      continue;
@@ -123,15 +199,22 @@ public class Analyser {
                 }
                 j++;
             } else {   
-                String twoCharSymbol = (j + 1 < line.length()) ? line.substring(j, j + 2) : null;             
+                String twoCharSymbol = (j + 1 < line.length()) ? line.substring(j, j + 2) : null;      
+                
+                if (twoCharSymbol != null && twoCharSymbol.equals("//")) {
+	                // If a token was being built, add it first.
+	                    if (tokenValue.length() > 0) {
+		                tokenStrings.add(tokenValue.toString());
+		                tokenValue.setLength(0);
+	                    }
+		            break; // Exit the inner while loop to move to the next line
+	            }
+                
                 String oneCharSymbol = String.valueOf(c);
                 if (twoCharSymbol != null && symbolSet.contains(twoCharSymbol)) {
                     if (tokenValue.length() > 0) {
                         tokenStrings.add(tokenValue.toString());
                         tokenValue.setLength(0);
-                    }
-                    if (twoCharSymbol.equals("//")) {
-                        break;
                     }
                     tokenStrings.add(twoCharSymbol);
                     j += 2;
@@ -196,6 +279,8 @@ public class Analyser {
          initSymbolSet(symbolSet);
          initCharSet(charSet);
      }
+
+
      public static void print(List<MyToken> tokenSet){
          int tokenCount = 0;
 
@@ -222,6 +307,12 @@ public class Analyser {
          hashSet.add("add");
          hashSet.add("not");
          hashSet.add("int");
+         hashSet.add("bool");
+         hashSet.add("if");
+         hashSet.add("then");
+         hashSet.add("else");
+         hashSet.add("print");
+         hashSet.add("program");
 
          //System.out.println("DEBUG: KEYOWORD SET CREATED");
      }
@@ -246,6 +337,11 @@ public class Analyser {
          hashSet.add(")");
          hashSet.add("{");
          hashSet.add("}");
+         hashSet.add(",");
+         hashSet.add(";");
+         hashSet.add(".");
+         hashSet.add(":");
+         hashSet.add("\\");
 
 
          //System.out.println("DEBUG: SYMBOL SET CREATED");

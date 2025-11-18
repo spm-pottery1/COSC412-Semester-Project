@@ -13,7 +13,7 @@ Compiler: javac 11.0.27
 Interpreter: Java Virtual Machine
 
 **--IDE/TOOLS--**
-IDE: *Visual Studio Code
+IDE: *Visual Studio Code*
 OS: Windows 11
 
 **--BUILD INSTRUCTIONS--**

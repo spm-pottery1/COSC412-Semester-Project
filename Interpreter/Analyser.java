@@ -43,20 +43,23 @@ public class Analyser {
         //System.out.println("Current Token in Body Parse: " + currentToken);
         currentIndex--; // Backtrack, since getNextToken advanced it.
         currentToken = tokens.get(currentIndex); // Get the token without advancing index
-        
+        currentIndex++;
         boolean isInt = currentToken.getLexeme().getKind().equals("int");
         boolean isBool = currentToken.getLexeme().getKind().equals("bool");
 
         
         declarationsParse(tokens, isBool, isInt);
+        System.out.println("Exit Declaration");
         statementParse(tokens);
 
     }
 
     public static void declarationsParse(List<MyToken> tokens, boolean isBool, boolean isInt) {
         MyToken currentToken = getNextToken(tokens);
+        System.out.println("Entered Declaration");
+
         System.out.println(currentToken);
-        while(currentToken != null && currentToken.getLexeme().getKind().equals(",")) {
+        while(currentToken.getLexeme().getKind().equals(",")) {
             System.out.println("Is it in you?");
             declaration(tokens);
             currentToken = getNextToken(tokens);
@@ -65,15 +68,29 @@ public class Analyser {
     }
     
     public static void declaration(List<MyToken> tokens) {
-        MyToken currentToken = getNextToken(tokens);
+    // 1. Consume the first ID (e.g., 'a')
+    MyToken currentToken = getNextToken(tokens);
+    matchToken(currentToken, "ID");
+    
+    // 2. Advance to the next token, which is either ',' or ';'
+    currentToken = getNextToken(tokens); 
+    
+    // 3. Loop while the current token is a comma
+    while(currentToken != null && currentToken.getLexeme().getKind().equals(",")){
+        System.out.println("Matched comma and looking for next ID");
+        // We've matched the comma implicitly by entering the loop. No need for a matchToken for the comma itself here.
+        
+        // 4. Consume the ID that must follow the comma (e.g., 'c')
+        currentToken = getNextToken(tokens); 
         matchToken(currentToken, "ID");
-        while(currentToken.getLexeme().getKind().equals(",")){
-            System.out.println(currentToken);
-            currentToken=getNextToken(tokens);
-            matchToken(currentToken, "ID");
-        }
-        matchToken(currentToken, ";");
+        
+        // 5. Advance to the token following the ID (which is either another ',' or ';')
+        currentToken = getNextToken(tokens);
     }
+    
+    // 6. After the loop, the currentToken must be the semicolon.
+    matchToken(currentToken, ";"); 
+}
 
     public static void statementParse(List<MyToken> tokens) {
         // FIX: Removed currentIndex parameter from getNextToken

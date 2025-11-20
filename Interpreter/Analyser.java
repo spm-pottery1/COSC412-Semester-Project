@@ -29,103 +29,183 @@ public class Analyser {
     }
 
     public static void parse(List<MyToken> tokens) {
-        programHeaderParse(tokens); 
-        System.out.println(tokens.get(currentIndex));
-        System.out.println("Entering Body Parse");
-        bodyParse(tokens);
-    }
-
-    public static void bodyParse(List<MyToken> tokens) {
-
         MyToken currentToken = getNextToken(tokens);
-        System.out.println("Current Token in Body Parse: " + currentToken);       
-        currentToken = declarationsParse(tokens,currentToken);
-        System.out.println("Exit Declaration");
-        statementsParse(tokens,currentToken);
-
-    }
-    public static MyToken declarationsParse(List<MyToken> tokens, MyToken currentToken) {
-        System.out.println(currentToken);
         
-        while(currentToken.getLexeme().getKind().equals("int") || currentToken.getLexeme().getKind().equals("bool")){
+        currentToken = matchToken(tokens, currentToken, "program");
+        currentToken = matchToken(tokens, currentToken, "ID");
+        currentToken = matchToken(tokens, currentToken, ":");
+        currentToken = body(tokens, currentToken);
+        System.out.println("Successful Body Parse " + currentToken);
+    }
 
-            currentToken = declaration(tokens,currentToken);
-            System.out.println("Post declaration token: " + currentToken);
+    public static MyToken body(List <MyToken> tokens, MyToken currentToken) {
+        if(currentToken.getLexeme().getKind().equals("bool") || currentToken.getLexeme().getKind().equals("int")){
+            currentToken = declarations(tokens, currentToken);
+        }
+        currentToken = statements(tokens, currentToken);
+        return currentToken;
+    }
+
+    public static MyToken statements(List <MyToken> tokens, MyToken currentToken) {
+        currentToken = statement(tokens, currentToken);
+        while(currentToken.getLexeme().getKind().equals(";")) {
+
+            currentToken = getNextToken(tokens);
+            currentToken = statement(tokens, currentToken);
+
         }
         return currentToken;
-    }  
-    
-    public static MyToken declaration(List<MyToken> tokens, MyToken currentToken) {
+    }
 
-    currentToken = getNextToken(tokens);
-    System.out.println("Current declaration token: " + currentToken);
-
-    matchToken(currentToken, "ID");
-    currentToken = getNextToken(tokens); 
-
-    while(currentToken != null && currentToken.getLexeme().getKind().equals(",")){
-        System.out.println("Matched comma and looking for next ID");
-        currentToken = getNextToken(tokens);
-        System.out.println(currentToken); 
-        matchToken(currentToken, "ID");
-        currentToken = getNextToken(tokens);
+    public static MyToken statement(List <MyToken> tokens, MyToken currentToken) { 
+        if(currentToken.getLexeme().getKind().equals("ID")) {
+            currentToken = assignment(tokens,currentToken);
+        } else if(currentToken.getLexeme().getKind().equals("if")) {
+            System.out.println("Conditional statement");
+            //currentToken = conditional(tokens, currentToken);
+        } else if(currentToken.getLexeme().getKind().equals("while")) {
+            System.out.println("Iterrative Statement");
+            //currentToken = iterrative(tokens, currentToken);
+        } else if (currentToken.getLexeme().getKind().equals("print")) {
+            System.out.println("Print Statement");
+            //currentToken = print(tokens, currentToken);
+        }
+        return currentToken;
 
     }
-    System.out.println("Exited while loop: " + currentToken);
-    matchToken(currentToken, ";");
-    return currentToken = getNextToken(tokens);
+
+    public static MyToken assignment(List <MyToken> tokens, MyToken currentToken) {
+        currentToken = matchToken(tokens, currentToken, "ID");
+        currentToken = matchToken(tokens, currentToken, ":=");
+        currentToken = expression(tokens, currentToken);
+        return currentToken;
+    }
+
+    public static MyToken expression(List <MyToken> tokens, MyToken currentToken) {
+        currentToken = simpleExpression(tokens, currentToken);
+        if(currentToken.getLexeme().getKind().equals("<")|| currentToken.getLexeme().getKind().equals("<=")|| currentToken.getLexeme().getKind().equals("=")|| currentToken.getLexeme().getKind().equals("!")|| currentToken.getLexeme().getKind().equals("!=")|| currentToken.getLexeme().getKind().equals(">")|| currentToken.getLexeme().getKind().equals(">=")) {
+            currentToken = getNextToken(tokens);
+            currentToken = simpleExpression(tokens, currentToken);
+        }
+
+        return currentToken;
+    }
+
+    public static MyToken simpleExpression(List <MyToken> tokens, MyToken currentToken) {
+    currentToken = term(tokens, currentToken);
+    while(currentToken.getLexeme().getKind().equals("+") || currentToken.getLexeme().getKind().equals("-") || currentToken.getLexeme().getKind().equals("or")) {
+        currentToken = getNextToken(tokens); // Consume the operator
+        currentToken = term(tokens, currentToken); // Match the next term
+    }
+    return currentToken;
 }
 
-    public static MyToken statementsParse(List<MyToken> tokens, MyToken currentToken) {
-        System.out.println("Current statements token: " + currentToken);
-        
+    public static MyToken term(List <MyToken> tokens, MyToken currentToken) {
+    currentToken = factor(tokens, currentToken); // Match the first Factor
+    
+    // Handle zero or more operators followed by Factors
+    while(currentToken.getLexeme().getKind().equals("*") || currentToken.getLexeme().getKind().equals("/") || currentToken.getLexeme().getKind().equals("and")) {
+        currentToken = getNextToken(tokens); // Consume the operator (*, /, or and)
+        currentToken = factor(tokens, currentToken); // Match the next Factor
+    }
+    return currentToken; // Returns the token *after* the term (e.g., '+', ';', etc.)
+}
 
+    public static MyToken factor(List <MyToken> tokens, MyToken currentToken) {
+    String kind = currentToken.getLexeme().getKind();
+    if(kind.equals("-") || kind.equals("not")) {
+        currentToken = getNextToken(tokens);
+        currentToken = literal(tokens, currentToken);
+    } else if (kind.equals("NUM") || kind.equals("true") || kind.equals("false")) {
+        currentToken = literal(tokens, currentToken);
+    } else if(kind.equals("ID")) {
+        currentToken = getNextToken(tokens);
+    } else if(kind.equals("(")){
+        currentToken = getNextToken(tokens);
+        currentToken = expression(tokens, currentToken);
+        currentToken = matchToken(tokens, currentToken, ")");
+    } else {
+        System.out.println("Error: Unexpected token in factor: " + currentToken);
+        System.exit(-1);
+    }
+    return currentToken;
+}
 
+    public static MyToken literal(List <MyToken> tokens, MyToken currentToken) {
+    String kind = currentToken.getLexeme().getKind();
+    if(kind.equals("NUM")) {
+        currentToken = getNextToken(tokens); // Just consume the NUM token
+    } else if (kind.equals("true") || kind.equals("false")){
+        currentToken = booleanLiteral(tokens, currentToken);
+    } else {
+        System.out.println("Error: Expected literal (NUM, true, or false) but got: " + currentToken);
+        System.exit(-1);
+    }
+    return currentToken;
+}
+
+    public static MyToken booleanLiteral(List <MyToken> tokens, MyToken currentToken) {
+    if(currentToken.getLexeme().getKind().equals("true")) {
+        currentToken = matchToken(tokens, currentToken, "true"); 
+    } else if(currentToken.getLexeme().getKind().equals("false")){
+        currentToken = matchToken(tokens, currentToken, "false");
+    }
+    return currentToken;
+}
+
+    public static void expectedKind(MyToken currentToken) {
+        System.out.println("Error at " + currentIndex + ".");
+    }
+
+    public static MyToken declarations(List <MyToken> tokens, MyToken currentToken) {
+        while(currentToken.getLexeme().getKind().equals("bool") || currentToken.getLexeme().getKind().equals("int")) {
+            currentToken=declaration(tokens,currentToken);
+        }
         return currentToken;
     }
 
-    public static MyToken statementParse(List<MyToken> tokens, MyToken currentToken) {
-       
-
+    public static MyToken declaration(List <MyToken> tokens, MyToken currentToken) {
+        currentToken = matchToken(tokens, currentToken, "int");
+        currentToken = matchToken(tokens, currentToken, "ID");
+        while(currentToken.getLexeme().getKind().equals(",")) {
+            currentToken = getNextToken(tokens);
+            currentToken = matchToken(tokens, currentToken, "ID");
+        }
+        currentToken = matchToken(tokens, currentToken, ";");
         return currentToken;
     }
 
-    // FIX: Removed currentIndex parameter and return value
-    public static void programHeaderParse(List<MyToken> tokens) {
-        
-        // getNextToken advances the global currentIndex
-        MyToken currentToken = getNextToken(tokens); 
-        matchToken(currentToken, "program");
-        
-        currentToken = getNextToken(tokens);
-        matchToken(currentToken, "ID");
-        
-        currentToken = getNextToken(tokens);
-        matchToken(currentToken,":");
-
-    }
-
-
-    public static boolean matchToken(MyToken currentToken, String expectedKind) {
+    public static MyToken matchToken(List <MyToken> tokens, MyToken currentToken, String expectedKind) {
         if(currentToken.getLexeme().getKind().equals(expectedKind)) {
-            System.out.println("Matched " + expectedKind + " at " + currentToken.getLexeme().get_sPos());
-            return true;
+            currentToken=getNextToken(tokens);
+            System.out.println("Returning token after matching: " + currentToken);
+            return currentToken;
         } else {
             System.out.println("Error: Expected " + expectedKind + " at " + currentToken.getLexeme().get_sPos());
-            return false;
+            System.exit(-1);
         }
+        return currentToken;
     }
-
-    // FIX: Removed currentIndex parameter. It now uses and increments the global one.
     public static MyToken getNextToken(List<MyToken> tokens) {
         if (currentIndex < tokens.size()) {
-            return tokens.get(currentIndex++); // Uses global currentIndex
+            //System.out.println("DEBUG CURRENT TOKEN")
+            return tokens.get(currentIndex++); 
         } else {
-            return null; // No more tokens
+            System.exit(-1);
+            return null;
         }
     }
 
-    
+
+
+
+
+
+
+
+
+
+
     public static List<MyToken> createTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
         /*creates my tokens and stores them in a List before printing them. 
          * This uses a cheked token value for kind (ctoken) and a string for value (token)

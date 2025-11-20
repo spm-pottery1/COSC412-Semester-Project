@@ -24,78 +24,70 @@ public class Analyser {
         Tuple[] positions = getTokenPositions(fileContent, tokenStrings);
         
         List<MyToken> tokens = createTokens(tokenStrings, cTokenStrings, positions, keywordSet, symbolSet);
-        print(tokens);  
+        //print(tokens);  
         parse(tokens);
     }
 
     public static void parse(List<MyToken> tokens) {
-        // FIX: Removed local currentIndex and used global
         programHeaderParse(tokens); 
         System.out.println(tokens.get(currentIndex));
         System.out.println("Entering Body Parse");
         bodyParse(tokens);
     }
 
-    // FIX: Removed currentIndex parameter
     public static void bodyParse(List<MyToken> tokens) {
-        // FIX: Removed currentIndex parameter from getNextToken
-        MyToken currentToken = getNextToken(tokens);
-        //System.out.println("Current Token in Body Parse: " + currentToken);
-        currentIndex--; // Backtrack, since getNextToken advanced it.
-        currentToken = tokens.get(currentIndex); // Get the token without advancing index
-        currentIndex++;
-        boolean isInt = currentToken.getLexeme().getKind().equals("int");
-        boolean isBool = currentToken.getLexeme().getKind().equals("bool");
 
-        
-        declarationsParse(tokens, isBool, isInt);
+        MyToken currentToken = getNextToken(tokens);
+        System.out.println("Current Token in Body Parse: " + currentToken);       
+        currentToken = declarationsParse(tokens,currentToken);
         System.out.println("Exit Declaration");
-        statementParse(tokens);
+        statementsParse(tokens,currentToken);
 
     }
-
-    public static void declarationsParse(List<MyToken> tokens, boolean isBool, boolean isInt) {
-        MyToken currentToken = getNextToken(tokens);
-        System.out.println("Entered Declaration");
-
+    public static MyToken declarationsParse(List<MyToken> tokens, MyToken currentToken) {
         System.out.println(currentToken);
-        while(currentToken.getLexeme().getKind().equals(",")) {
-            System.out.println("Is it in you?");
-            declaration(tokens);
-            currentToken = getNextToken(tokens);
-        }
         
-    }
+        while(currentToken.getLexeme().getKind().equals("int") || currentToken.getLexeme().getKind().equals("bool")){
+
+            currentToken = declaration(tokens,currentToken);
+            System.out.println("Post declaration token: " + currentToken);
+        }
+        return currentToken;
+    }  
     
-    public static void declaration(List<MyToken> tokens) {
-    // 1. Consume the first ID (e.g., 'a')
-    MyToken currentToken = getNextToken(tokens);
+    public static MyToken declaration(List<MyToken> tokens, MyToken currentToken) {
+
+    currentToken = getNextToken(tokens);
+    System.out.println("Current declaration token: " + currentToken);
+
     matchToken(currentToken, "ID");
-    
-    // 2. Advance to the next token, which is either ',' or ';'
     currentToken = getNextToken(tokens); 
-    
-    // 3. Loop while the current token is a comma
+
     while(currentToken != null && currentToken.getLexeme().getKind().equals(",")){
         System.out.println("Matched comma and looking for next ID");
-        // We've matched the comma implicitly by entering the loop. No need for a matchToken for the comma itself here.
-        
-        // 4. Consume the ID that must follow the comma (e.g., 'c')
-        currentToken = getNextToken(tokens); 
-        matchToken(currentToken, "ID");
-        
-        // 5. Advance to the token following the ID (which is either another ',' or ';')
         currentToken = getNextToken(tokens);
+        System.out.println(currentToken); 
+        matchToken(currentToken, "ID");
+        currentToken = getNextToken(tokens);
+
     }
-    
-    // 6. After the loop, the currentToken must be the semicolon.
-    matchToken(currentToken, ";"); 
+    System.out.println("Exited while loop: " + currentToken);
+    matchToken(currentToken, ";");
+    return currentToken = getNextToken(tokens);
 }
 
-    public static void statementParse(List<MyToken> tokens) {
-        // FIX: Removed currentIndex parameter from getNextToken
-        MyToken currentToken = getNextToken(tokens);
+    public static MyToken statementsParse(List<MyToken> tokens, MyToken currentToken) {
+        System.out.println("Current statements token: " + currentToken);
         
+
+
+        return currentToken;
+    }
+
+    public static MyToken statementParse(List<MyToken> tokens, MyToken currentToken) {
+       
+
+        return currentToken;
     }
 
     // FIX: Removed currentIndex parameter and return value

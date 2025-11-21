@@ -26,12 +26,11 @@ public class MyToken {
 		return value;
 	}
 
-	@Override
 	public String toString() {
 		if (lexeme == null) {
-			return "[NULL], Value: " + String.valueOf(value);
+			return "FULL TOKEN {Lexeme: [NULL], Value: " + String.valueOf(value) + "}";
 		}
-		return "[" + lexeme.toString() + "], Value: " + String.valueOf(value);
+		return "FULL TOKEN {Lexeme: [" + lexeme.toString() + "], Value: " + String.valueOf(value) + "}";
 	}
 
 	public void setValue(Object v) {
@@ -41,4 +40,4 @@ public class MyToken {
 	public void setLexeme(MyLexeme lex) {
 		this.lexeme = lex;
 	}
-}
+} 

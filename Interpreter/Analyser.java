@@ -35,7 +35,10 @@ public class Analyser {
         currentToken = matchToken(tokens, currentToken, "ID");
         currentToken = matchToken(tokens, currentToken, ":");
         currentToken = body(tokens, currentToken);
-        System.out.println("Successful Body Parse " + currentToken);
+        currentToken = matchToken(tokens, currentToken, ".");
+        if(currentToken.getLexeme().getKind().equals("END-OF-FILE")) {
+            System.out.println("File Successfully Parsed");
+        }
     }
 
     public static MyToken body(List <MyToken> tokens, MyToken currentToken) {
@@ -61,17 +64,52 @@ public class Analyser {
         if(currentToken.getLexeme().getKind().equals("ID")) {
             currentToken = assignment(tokens,currentToken);
         } else if(currentToken.getLexeme().getKind().equals("if")) {
-            System.out.println("Conditional statement");
-            //currentToken = conditional(tokens, currentToken);
+            currentToken = conditional(tokens, currentToken);
         } else if(currentToken.getLexeme().getKind().equals("while")) {
-            System.out.println("Iterrative Statement");
-            //currentToken = iterrative(tokens, currentToken);
+            currentToken = iterrative(tokens, currentToken);
         } else if (currentToken.getLexeme().getKind().equals("print")) {
-            System.out.println("Print Statement");
-            //currentToken = print(tokens, currentToken);
+            currentToken = printStatement(tokens, currentToken);
+        } else {
+            System.out.println("Error: Expected ID, if, while, or print but got: " + currentToken.getLexeme().getKind() + ", at pos:" +currentToken.getLexeme().get_sPos());
+            System.exit(-1);
         }
         return currentToken;
 
+    }
+
+    public static MyToken printStatement(List <MyToken> tokens, MyToken currentToken) {
+        currentToken = matchToken(tokens, currentToken, "print");
+        currentToken = expression(tokens, currentToken);
+        return currentToken;
+    }
+
+    public static MyToken iterrative(List <MyToken> tokens, MyToken currentToken){
+         currentToken = matchToken(tokens, currentToken, "while");
+         currentToken = expression(tokens, currentToken);
+         currentToken = matchToken(tokens, currentToken, "do");
+         currentToken = body(tokens, currentToken);
+         if(currentToken.getLexeme().getKind().equals("end")){
+            currentToken = matchToken(tokens, currentToken, "end");
+         } else {
+            System.out.println("Error: Expected one of ID, if, while and print but got: " + currentToken.getLexeme().getKind() + ", at pos:" +currentToken.getLexeme().get_sPos());
+            System.exit(-1);
+         }
+
+        return currentToken;
+    }
+
+    public static MyToken conditional(List<MyToken> tokens, MyToken currentToken) {
+        currentToken = matchToken(tokens, currentToken, "if");
+        currentToken = expression(tokens, currentToken);
+        currentToken = matchToken(tokens, currentToken, "then");
+        currentToken = body(tokens, currentToken);
+
+        if(currentToken.getLexeme().getKind().equals("else")) {
+            currentToken = getNextToken(tokens);
+            currentToken = body(tokens, currentToken);
+        }
+        currentToken = matchToken(tokens, currentToken, "end");
+        return currentToken;
     }
 
     public static MyToken assignment(List <MyToken> tokens, MyToken currentToken) {
@@ -104,7 +142,7 @@ public class Analyser {
     currentToken = factor(tokens, currentToken); // Match the first Factor
     
     // Handle zero or more operators followed by Factors
-    while(currentToken.getLexeme().getKind().equals("*") || currentToken.getLexeme().getKind().equals("/") || currentToken.getLexeme().getKind().equals("and")) {
+    while(currentToken.getLexeme().getKind().equals("*") || currentToken.getLexeme().getKind().equals("/") || currentToken.getLexeme().getKind().equals("and") || currentToken.getLexeme().getKind().equals("mod")) {
         currentToken = getNextToken(tokens); // Consume the operator (*, /, or and)
         currentToken = factor(tokens, currentToken); // Match the next Factor
     }
@@ -115,17 +153,19 @@ public class Analyser {
     String kind = currentToken.getLexeme().getKind();
     if(kind.equals("-") || kind.equals("not")) {
         currentToken = getNextToken(tokens);
+        kind = currentToken.getLexeme().getKind();
+    }
+    if (kind.equals("NUM") || kind.equals("true") || kind.equals("false")) {
         currentToken = literal(tokens, currentToken);
-    } else if (kind.equals("NUM") || kind.equals("true") || kind.equals("false")) {
-        currentToken = literal(tokens, currentToken);
-    } else if(kind.equals("ID")) {
+    } else if (kind.equals("ID")) {
         currentToken = getNextToken(tokens);
-    } else if(kind.equals("(")){
+    } else if (kind.equals("(")) {
         currentToken = getNextToken(tokens);
         currentToken = expression(tokens, currentToken);
+        currentToken = getNextToken(tokens);
         currentToken = matchToken(tokens, currentToken, ")");
     } else {
-        System.out.println("Error: Unexpected token in factor: " + currentToken);
+        System.out.println("Error: Expected NUM, true, false, but got: " + currentToken.getLexeme().getKind());
         System.exit(-1);
     }
     return currentToken;
@@ -133,13 +173,17 @@ public class Analyser {
 
     public static MyToken literal(List <MyToken> tokens, MyToken currentToken) {
     String kind = currentToken.getLexeme().getKind();
-    if(kind.equals("NUM")) {
-        currentToken = getNextToken(tokens); // Just consume the NUM token
-    } else if (kind.equals("true") || kind.equals("false")){
-        currentToken = booleanLiteral(tokens, currentToken);
-    } else {
-        System.out.println("Error: Expected literal (NUM, true, or false) but got: " + currentToken);
-        System.exit(-1);
+    switch (kind) {
+        case "NUM":
+            currentToken = getNextToken(tokens); // Just consume the NUM token
+            break;
+        case "true":
+        case "false":
+            currentToken = booleanLiteral(tokens, currentToken);
+            break;
+        default:
+            System.out.println("Error: Expected NUM, true, false, but got: " + currentToken.getLexeme().getKind());
+            System.exit(-1);
     }
     return currentToken;
 }
@@ -165,10 +209,10 @@ public class Analyser {
     }
 
     public static MyToken declaration(List <MyToken> tokens, MyToken currentToken) {
-        currentToken = matchToken(tokens, currentToken, "int");
+        currentToken = getNextToken(tokens);
         currentToken = matchToken(tokens, currentToken, "ID");
         while(currentToken.getLexeme().getKind().equals(",")) {
-            currentToken = getNextToken(tokens);
+            currentToken = matchToken(tokens, currentToken, ",");
             currentToken = matchToken(tokens, currentToken, "ID");
         }
         currentToken = matchToken(tokens, currentToken, ";");
@@ -178,17 +222,17 @@ public class Analyser {
     public static MyToken matchToken(List <MyToken> tokens, MyToken currentToken, String expectedKind) {
         if(currentToken.getLexeme().getKind().equals(expectedKind)) {
             currentToken=getNextToken(tokens);
-            System.out.println("Returning token after matching: " + currentToken);
+            //System.out.println("DEBUG CURRENT RETURN TOKEN matchToken" + currentToken);
             return currentToken;
         } else {
-            System.out.println("Error: Expected " + expectedKind + " at " + currentToken.getLexeme().get_sPos());
+            System.out.println("Error: Expected " + expectedKind + ", but got: " + currentToken.getLexeme().getKind() + ", at pos:" +currentToken.getLexeme().get_sPos());
             System.exit(-1);
         }
         return currentToken;
     }
     public static MyToken getNextToken(List<MyToken> tokens) {
         if (currentIndex < tokens.size()) {
-            //System.out.println("DEBUG CURRENT TOKEN")
+            //System.out.println("DEBUG CURRENT RETURN TOKEN getNextToken" + tokens.get(currentIndex));
             return tokens.get(currentIndex++); 
         } else {
             System.exit(-1);
@@ -203,7 +247,7 @@ public class Analyser {
 
 
 
-
+// Last Project
 
 
     public static List<MyToken> createTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
@@ -411,6 +455,8 @@ public class Analyser {
         hashSet.add("else");
         hashSet.add("print");
         hashSet.add("program");
+        hashSet.add("mod");
+        hashSet.add("and");
     }
     public static void initSymbolSet(HashSet<String> hashSet) {
         hashSet.add("+");

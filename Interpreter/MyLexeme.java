@@ -30,5 +30,5 @@ public class MyLexeme {
     }
     public String toString() {
         return "Type: " + this.type + ", Start Position: " + this.sPos.toString();
-    }       
+    }        
 }

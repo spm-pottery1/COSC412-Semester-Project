@@ -37,5 +37,5 @@ public class Tuple{
     public String toString(){
         return "("+this.x+","+this.y+")";
     }
-    
+     
 }

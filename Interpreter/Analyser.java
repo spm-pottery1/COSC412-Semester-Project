@@ -1,9 +1,3 @@
-//Simon Murray
-//Build #4
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.*;
-
 public class Analyser {
     public static int currentIndex = 0;
     
@@ -24,182 +18,232 @@ public class Analyser {
         Tuple[] positions = getTokenPositions(fileContent, tokenStrings);
         
         List<MyToken> tokens = createTokens(tokenStrings, cTokenStrings, positions, keywordSet, symbolSet);
-        //print(tokens);  
-        parse(tokens);
+        
+        // The parse method now returns the root of the AST
+        ASTNode root = parse(tokens); 
+        
+        System.out.println("\n--- Abstract Syntax Tree ---");
+        System.out.println(root.toTreeString(""));
     }
 
-    public static void parse(List<MyToken> tokens) {
+    public static ASTNode parse(List<MyToken> tokens) {
         MyToken currentToken = getNextToken(tokens);
         
         currentToken = matchToken(tokens, currentToken, "program");
-        currentToken = matchToken(tokens, currentToken, "ID");
+        String programId = currentToken.getValue();
+        currentToken = getNextToken(tokens); // Consume ID
         currentToken = matchToken(tokens, currentToken, ":");
-        currentToken = body(tokens, currentToken);
+        
+        ASTNode bodyNode = body(tokens, currentToken);
+        
         currentToken = matchToken(tokens, currentToken, ".");
+        
         if(currentToken.getLexeme().getKind().equals("END-OF-FILE")) {
             System.out.println("File Successfully Parsed");
         }
+
+        return new ProgramNode(programId, bodyNode);
     }
 
-    public static MyToken body(List <MyToken> tokens, MyToken currentToken) {
+    public static ASTNode body(List <MyToken> tokens, MyToken currentToken) {
+        ASTNode declarationsNode = new NoOpNode(); // Default to NOOP
         if(currentToken.getLexeme().getKind().equals("bool") || currentToken.getLexeme().getKind().equals("int")){
+            MyToken startToken = currentToken;
             currentToken = declarations(tokens, currentToken);
+            // In a full implementation, declarationsNode would be built here.
+            // For now, it remains NOOP as per the previous simple structure.
+            declarationsNode = new NoOpNode(); 
         }
-        currentToken = statements(tokens, currentToken);
-        return currentToken;
+        
+        ASTNode statementsNode = statements(tokens, currentToken);
+        
+        return new BodyNode(declarationsNode, statementsNode);
     }
 
-    public static MyToken statements(List <MyToken> tokens, MyToken currentToken) {
-        currentToken = statement(tokens, currentToken);
+    public static ASTNode statements(List <MyToken> tokens, MyToken currentToken) {
+        ASTNode firstStatement = statement(tokens, currentToken);
+        StatementsNode statementsNode = new StatementsNode(firstStatement);
+
         while(currentToken.getLexeme().getKind().equals(";")) {
-
-            currentToken = getNextToken(tokens);
-            currentToken = statement(tokens, currentToken);
-
+            currentToken = getNextToken(tokens); // Consume ';'
+            ASTNode nextStatement = statement(tokens, currentToken);
+            statementsNode.addStatement(nextStatement);
         }
-        return currentToken;
+        return statementsNode;
     }
 
-    public static MyToken statement(List <MyToken> tokens, MyToken currentToken) { 
+    public static ASTNode statement(List <MyToken> tokens, MyToken currentToken) { 
+        ASTNode node = null;
         if(currentToken.getLexeme().getKind().equals("ID")) {
-            currentToken = assignment(tokens,currentToken);
+            node = assignment(tokens,currentToken);
         } else if(currentToken.getLexeme().getKind().equals("if")) {
-            currentToken = conditional(tokens, currentToken);
+            node = conditional(tokens, currentToken);
         } else if(currentToken.getLexeme().getKind().equals("while")) {
-            currentToken = iterrative(tokens, currentToken);
+            node = iterrative(tokens, currentToken);
         } else if (currentToken.getLexeme().getKind().equals("print")) {
-            currentToken = printStatement(tokens, currentToken);
+            node = printStatement(tokens, currentToken);
         } else {
             System.out.println("Error: Expected ID, if, while, or print but got: " + currentToken.getLexeme().getKind() + ", at pos:" +currentToken.getLexeme().get_sPos());
             System.exit(-1);
         }
-        return currentToken;
-
+        return node;
     }
 
-    public static MyToken printStatement(List <MyToken> tokens, MyToken currentToken) {
-        currentToken = matchToken(tokens, currentToken, "print");
-        currentToken = expression(tokens, currentToken);
-        return currentToken;
+    /** Implements AST Generation for printStatement **/
+    public static ASTNode printStatement(List <MyToken> tokens, MyToken currentToken) {
+        currentToken = matchToken(tokens, currentToken, "print"); // Consume 'print'
+        
+        ASTNode expressionNode = expression(tokens, currentToken);
+        
+        // Assuming the expression results in a BOOL type
+        return new PrintNode(expressionNode, "BOOL"); 
     }
 
-    public static MyToken iterrative(List <MyToken> tokens, MyToken currentToken){
+    public static ASTNode iterrative(List <MyToken> tokens, MyToken currentToken){
          currentToken = matchToken(tokens, currentToken, "while");
-         currentToken = expression(tokens, currentToken);
+         ASTNode conditionNode = expression(tokens, currentToken);
          currentToken = matchToken(tokens, currentToken, "do");
-         currentToken = body(tokens, currentToken);
+         ASTNode bodyNode = body(tokens, currentToken);
          if(currentToken.getLexeme().getKind().equals("end")){
             currentToken = matchToken(tokens, currentToken, "end");
          } else {
-            System.out.println("Error: Expected one of ID, if, while and print but got: " + currentToken.getLexeme().getKind() + ", at pos:" +currentToken.getLexeme().get_sPos());
+            System.out.println("Error: Expected 'end' but got: " + currentToken.getLexeme().getKind() + ", at pos:" +currentToken.getLexeme().get_sPos());
             System.exit(-1);
          }
 
-        return currentToken;
+        return new NoOpNode(); 
     }
 
-    public static MyToken conditional(List<MyToken> tokens, MyToken currentToken) {
-        currentToken = matchToken(tokens, currentToken, "if");
-        currentToken = expression(tokens, currentToken);
-        currentToken = matchToken(tokens, currentToken, "then");
-        currentToken = body(tokens, currentToken);
-
+    /** Implements AST Generation for conditional (if-then-else) **/
+    public static ASTNode conditional(List<MyToken> tokens, MyToken currentToken) {
+        currentToken = matchToken(tokens, currentToken, "if"); // Consume 'if'
+        ASTNode conditionNode = expression(tokens, currentToken);
+        
+        currentToken = matchToken(tokens, currentToken, "then"); // Consume 'then'
+        ASTNode thenBranchNode = body(tokens, currentToken);
+        
+        ASTNode elseBranchNode = new NoOpNode(); // Default to NOOP
+        
         if(currentToken.getLexeme().getKind().equals("else")) {
-            currentToken = getNextToken(tokens);
-            currentToken = body(tokens, currentToken);
+            currentToken = getNextToken(tokens); // Consume 'else'
+            elseBranchNode = body(tokens, currentToken);
         }
-        currentToken = matchToken(tokens, currentToken, "end");
-        return currentToken;
+        
+        currentToken = matchToken(tokens, currentToken, "end"); // Consume 'end'
+        
+        return new IfNode(conditionNode, thenBranchNode, elseBranchNode);
     }
 
-    public static MyToken assignment(List <MyToken> tokens, MyToken currentToken) {
-        currentToken = matchToken(tokens, currentToken, "ID");
-        currentToken = matchToken(tokens, currentToken, ":=");
-        currentToken = expression(tokens, currentToken);
-        return currentToken;
+    public static ASTNode assignment(List <MyToken> tokens, MyToken currentToken) {
+        String id = currentToken.getValue();
+        currentToken = matchToken(tokens, currentToken, "ID"); // Consume ID
+        currentToken = matchToken(tokens, currentToken, ":="); // Consume ':='
+        ASTNode expressionNode = expression(tokens, currentToken);
+        return new AssignNode(id, expressionNode);
     }
 
-    public static MyToken expression(List <MyToken> tokens, MyToken currentToken) {
-        currentToken = simpleExpression(tokens, currentToken);
-        if(currentToken.getLexeme().getKind().equals("<")|| currentToken.getLexeme().getKind().equals("<=")|| currentToken.getLexeme().getKind().equals("=")|| currentToken.getLexeme().getKind().equals("!")|| currentToken.getLexeme().getKind().equals("!=")|| currentToken.getLexeme().getKind().equals(">")|| currentToken.getLexeme().getKind().equals(">=")) {
-            currentToken = getNextToken(tokens);
-            currentToken = simpleExpression(tokens, currentToken);
+    public static ASTNode expression(List <MyToken> tokens, MyToken currentToken) {
+        ASTNode left = simpleExpression(tokens, currentToken);
+        String op = currentToken.getLexeme().getKind();
+        
+        if(op.equals("<")|| op.equals("<=")|| op.equals("=")|| op.equals("!")|| op.equals("!=")|| op.equals(">")|| op.equals(">=")) {
+            currentToken = getNextToken(tokens); // Consume operator
+            ASTNode right = simpleExpression(tokens, currentToken);
+            return new BinaryOpNode(op.toUpperCase(), left, right); // Example: LT, GT, EQ
         }
 
-        return currentToken;
+        return left;
     }
 
-    public static MyToken simpleExpression(List <MyToken> tokens, MyToken currentToken) {
-    currentToken = term(tokens, currentToken);
-    while(currentToken.getLexeme().getKind().equals("+") || currentToken.getLexeme().getKind().equals("-") || currentToken.getLexeme().getKind().equals("or")) {
+    public static ASTNode simpleExpression(List <MyToken> tokens, MyToken currentToken) {
+    ASTNode left = term(tokens, currentToken);
+    String op = currentToken.getLexeme().getKind();
+    
+    while(op.equals("+") || op.equals("-") || op.equals("or")) {
         currentToken = getNextToken(tokens); // Consume the operator
-        currentToken = term(tokens, currentToken); // Match the next term
+        ASTNode right = term(tokens, currentToken); // Match the next term
+        left = new BinaryOpNode(op.toUpperCase(), left, right); // Example: ADD, SUB, OR
+        op = currentToken.getLexeme().getKind();
     }
-    return currentToken;
+    return left;
 }
 
-    public static MyToken term(List <MyToken> tokens, MyToken currentToken) {
-    currentToken = factor(tokens, currentToken); // Match the first Factor
+    public static ASTNode term(List <MyToken> tokens, MyToken currentToken) {
+    ASTNode left = factor(tokens, currentToken); // Match the first Factor
+    String op = currentToken.getLexeme().getKind();
     
     // Handle zero or more operators followed by Factors
-    while(currentToken.getLexeme().getKind().equals("*") || currentToken.getLexeme().getKind().equals("/") || currentToken.getLexeme().getKind().equals("and") || currentToken.getLexeme().getKind().equals("mod")) {
+    while(op.equals("*") || op.equals("/") || op.equals("and") || op.equals("mod")) {
         currentToken = getNextToken(tokens); // Consume the operator (*, /, or and)
-        currentToken = factor(tokens, currentToken); // Match the next Factor
+        ASTNode right = factor(tokens, currentToken); // Match the next Factor
+        left = new BinaryOpNode(op.toUpperCase(), left, right); // Example: MUL, DIV, AND, MOD
+        op = currentToken.getLexeme().getKind();
     }
-    return currentToken; // Returns the token *after* the term (e.g., '+', ';', etc.)
+    return left; // Returns the AST node for the term
 }
 
-    public static MyToken factor(List <MyToken> tokens, MyToken currentToken) {
+    public static ASTNode factor(List <MyToken> tokens, MyToken currentToken) {
     String kind = currentToken.getLexeme().getKind();
+    String op = null;
     if(kind.equals("-") || kind.equals("not")) {
+        op = kind.toUpperCase();
         currentToken = getNextToken(tokens);
         kind = currentToken.getLexeme().getKind();
     }
+    
+    ASTNode node;
     if (kind.equals("NUM") || kind.equals("true") || kind.equals("false")) {
-        currentToken = literal(tokens, currentToken);
+        node = literal(tokens, currentToken);
     } else if (kind.equals("ID")) {
-        currentToken = getNextToken(tokens);
+        node = new IdNode(currentToken.getValue());
+        currentToken = getNextToken(tokens); // Consume ID
     } else if (kind.equals("(")) {
+        currentToken = getNextToken(tokens); // Consume '('
+        node = expression(tokens, currentToken);
         currentToken = getNextToken(tokens);
-        currentToken = expression(tokens, currentToken);
-        currentToken = getNextToken(tokens);
-        currentToken = matchToken(tokens, currentToken, ")");
+        currentToken = matchToken(tokens, currentToken, ")"); // Consume ')'
     } else {
-        System.out.println("Error: Expected NUM, true, false, but got: " + currentToken.getLexeme().getKind());
+        System.out.println("Error: Expected NUM, true, false, ID, or ( but got: " + currentToken.getLexeme().getKind());
         System.exit(-1);
+        node = null; 
     }
-    return currentToken;
+
+    if (op != null) {
+        return new UnaryOpNode(op, node);
+    }
+    return node;
 }
 
-    public static MyToken literal(List <MyToken> tokens, MyToken currentToken) {
+    public static ASTNode literal(List <MyToken> tokens, MyToken currentToken) {
+    ASTNode node = null;
     String kind = currentToken.getLexeme().getKind();
     switch (kind) {
         case "NUM":
-            currentToken = getNextToken(tokens); // Just consume the NUM token
+            node = new IntLiteralNode(currentToken.getValue());
+            currentToken = getNextToken(tokens); // Consume the NUM token
             break;
         case "true":
         case "false":
-            currentToken = booleanLiteral(tokens, currentToken);
+            node = booleanLiteral(tokens, currentToken);
             break;
         default:
             System.out.println("Error: Expected NUM, true, false, but got: " + currentToken.getLexeme().getKind());
             System.exit(-1);
     }
-    return currentToken;
+    return node;
 }
 
-    public static MyToken booleanLiteral(List <MyToken> tokens, MyToken currentToken) {
-    if(currentToken.getLexeme().getKind().equals("true")) {
-        currentToken = matchToken(tokens, currentToken, "true"); 
-    } else if(currentToken.getLexeme().getKind().equals("false")){
-        currentToken = matchToken(tokens, currentToken, "false");
+    public static ASTNode booleanLiteral(List <MyToken> tokens, MyToken currentToken) {
+        String value = currentToken.getValue();
+        if(currentToken.getLexeme().getKind().equals("true")) {
+            currentToken = matchToken(tokens, currentToken, "true"); 
+        } else if(currentToken.getLexeme().getKind().equals("false")){
+            currentToken = matchToken(tokens, currentToken, "false");
+        }
+        return new BoolLiteralNode(value);
     }
-    return currentToken;
-}
 
-    public static void expectedKind(MyToken currentToken) {
-        System.out.println("Error at " + currentIndex + ".");
-    }
+    // --- Utility Methods (Token & Lexing) ---
 
     public static MyToken declarations(List <MyToken> tokens, MyToken currentToken) {
         while(currentToken.getLexeme().getKind().equals("bool") || currentToken.getLexeme().getKind().equals("int")) {
@@ -221,39 +265,28 @@ public class Analyser {
 
     public static MyToken matchToken(List <MyToken> tokens, MyToken currentToken, String expectedKind) {
         if(currentToken.getLexeme().getKind().equals(expectedKind)) {
-            currentToken=getNextToken(tokens);
-            //System.out.println("DEBUG CURRENT RETURN TOKEN matchToken" + currentToken);
+            // Token matches, but don't consume it here. 
             return currentToken;
         } else {
             System.out.println("Error: Expected " + expectedKind + ", but got: " + currentToken.getLexeme().getKind() + ", at pos:" +currentToken.getLexeme().get_sPos());
             System.exit(-1);
         }
-        return currentToken;
+        return currentToken; // Should be unreachable due to exit
     }
+    
     public static MyToken getNextToken(List<MyToken> tokens) {
         if (currentIndex < tokens.size()) {
-            //System.out.println("DEBUG CURRENT RETURN TOKEN getNextToken" + tokens.get(currentIndex));
             return tokens.get(currentIndex++); 
         } else {
+            if (currentIndex == tokens.size()) {
+                 return tokens.get(currentIndex - 1);
+            }
             System.exit(-1);
             return null;
         }
     }
 
-
-
-
-
-
-
-
-// Last Project
-
-
     public static List<MyToken> createTokens(List<String> tokenStrings, List<String> cTokenStrings, Tuple[] positions, HashSet<String> keywordSet, HashSet<String> symbolSet) {
-        /*creates my tokens and stores them in a List before printing them. 
-         * This uses a cheked token value for kind (ctoken) and a string for value (token)
-         */
         List<MyToken> tokenSet = new ArrayList<>(tokenStrings.size());         
          int i = 0; 
          while (!tokenStrings.isEmpty()) { 
@@ -271,8 +304,7 @@ public class Analyser {
         if (positions.length > 0) {
             tokenSet.add(new MyToken(new MyLexeme("END-OF-FILE", new Tuple(positions[positions.length - 1].getX(), positions[positions.length - 1].getY() + 1)), "$"));
         } else {
-            // Handle case with no tokens in file
-             tokenSet.add(new MyToken(new MyLexeme("END-OF-FILE", new Tuple(1, 1)), "$"));
+            tokenSet.add(new MyToken(new MyLexeme("END-OF-FILE", new Tuple(1, 1)), "$"));
         }
         
         return(tokenSet);
@@ -291,7 +323,6 @@ public class Analyser {
             while (j < line.length() && tokenIndex < tokenStrings.size()) {
                 
                 if (j + 1 < line.length() && line.substring(j, j + 2).equals("//")) {
-                // If comment is found, skip the rest of the line
                 break; 
                 }
                 
@@ -344,12 +375,11 @@ public class Analyser {
                 String twoCharSymbol = (j + 1 < line.length()) ? line.substring(j, j + 2) : null;      
                 
                 if (twoCharSymbol != null && twoCharSymbol.equals("//")) {
-                    // If a token was being built, add it first.
                         if (tokenValue.length() > 0) {
                         tokenStrings.add(tokenValue.toString());
                         tokenValue.setLength(0);
                         }
-                    break; // Exit the inner while loop to move to the next line
+                    break; 
                 }
                 
                 String oneCharSymbol = String.valueOf(c);
@@ -420,16 +450,6 @@ public class Analyser {
         initKeywordSet(keywordSet);
         initSymbolSet(symbolSet);
         initCharSet(charSet);
-    }
-
-
-    public static void print(List<MyToken> tokenSet){
-        int tokenCount = 0;
-
-        for(MyToken token: tokenSet) {
-            System.out.println("TOKEN " + tokenCount + ": " + token);
-            tokenCount++;
-        }
     }
 
     private static void initCharSet(HashSet<Character> charSet) {
@@ -523,16 +543,6 @@ public class Analyser {
 
     }
 
-    public static boolean checkEndOfText(String tokenValue) {
-        if(tokenValue.equals("$")) {
-            return true;
-        } else {
-            return false;
-        }
-
-    }
-
-
     public static String check(String tokenValue, HashSet<String> keywordSet, HashSet<String> symbolSet) {
         boolean num = checkInt(tokenValue);
         boolean keyword = checkKeyword(tokenValue, keywordSet);
@@ -555,6 +565,4 @@ public class Analyser {
         String fileLoc = scanner.nextLine();
         return fileLoc;
     }
-
-
 }
